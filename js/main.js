@@ -11,6 +11,7 @@ import { showPrompt } from "./modal.js";
 const icRegistry = new ICRegistry();
 const circuit = new Circuit(icRegistry);
 const world = { circuit, icRegistry, selection: new Set(), wireDraft: null, rubberBand: null };
+let clipboard = null; // { gates: json[], wires: json[] }
 
 const canvas = document.getElementById("board");
 const renderer = new Renderer(canvas, world);
@@ -167,8 +168,52 @@ function wireToolbar() {
       e.preventDefault();
       history.redo();
       refreshIcPalette();
+    } else if (e.ctrlKey && e.key.toLowerCase() === "c") {
+      e.preventDefault();
+      copySelection();
+    } else if (e.ctrlKey && e.key.toLowerCase() === "v") {
+      e.preventDefault();
+      pasteClipboard();
     }
   });
+}
+
+// 선택 영역 안에서 양 끝이 모두 선택된 게이트인 와이어만 함께 복사한다.
+function selectionSnapshot(gates) {
+  const gateIds = new Set(gates.map(g => g.id));
+  const wires = [...circuit.wires.values()].filter(w => gateIds.has(w.fromGateId) && gateIds.has(w.toGateId));
+  return { gates: gates.map(g => g.toJSON()), wires: wires.map(w => w.toJSON()) };
+}
+
+function copySelection() {
+  const gates = [...world.selection].map(id => circuit.gates.get(id)).filter(Boolean);
+  if (gates.length === 0) return;
+  clipboard = selectionSnapshot(gates);
+}
+
+const PASTE_OFFSET = 24;
+
+function pasteClipboard() {
+  if (!clipboard || clipboard.gates.length === 0) return;
+  history.begin();
+
+  const idMap = new Map();
+  const newGates = clipboard.gates.map((g) => {
+    const gate = Gate.fromJSON({ ...g, id: undefined, x: g.x + PASTE_OFFSET, y: g.y + PASTE_OFFSET });
+    idMap.set(g.id, gate.id);
+    circuit.addGate(gate);
+    return gate;
+  });
+  for (const w of clipboard.wires) {
+    circuit.addWire(new Wire(idMap.get(w.fromGateId), w.fromPin, idMap.get(w.toGateId), w.toPin));
+  }
+
+  world.selection.clear();
+  for (const g of newGates) world.selection.add(g.id);
+  history.end();
+
+  // 연속으로 Ctrl+V를 누르면 방금 붙여넣은 자리를 기준으로 계단식으로 이어 붙는다.
+  clipboard = selectionSnapshot(newGates);
 }
 
 function updateToolbarState() {
