@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logic — 논리 회로 시뮬레이터</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header id="toolbar">
+  <div class="brand">Logic</div>
+  <div class="tool-group">
+    <button id="btn-undo" title="실행 취소 (Ctrl+Z)">↶</button>
+    <button id="btn-redo" title="다시 실행 (Ctrl+Y)">↷</button>
+  </div>
+  <div class="tool-group">
+    <button id="btn-make-ic" title="선택 영역을 IC로 묶기">IC로 묶기</button>
+    <button id="btn-delete" title="선택 삭제 (Delete)">삭제</button>
+  </div>
+  <div class="tool-group">
+    <button id="btn-new">새 회로</button>
+    <button id="btn-save">저장</button>
+    <label class="file-btn">불러오기<input type="file" id="input-load" accept="application/json"></label>
+  </div>
+</header>
+
+<div id="app">
+  <aside id="palette"></aside>
+  <main id="canvas-wrap">
+    <canvas id="board"></canvas>
+  </main>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

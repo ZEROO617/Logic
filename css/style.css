@@ -1,0 +1,111 @@
+:root {
+  --bg: #eef1f5;
+  --panel: #ffffff;
+  --border: #d5dae1;
+  --text: #1f2937;
+  --accent: #2563eb;
+  --wire-off: #94a3b8;
+  --wire-on: #f59e0b;
+  --gate-fill: #ffffff;
+  --gate-stroke: #334155;
+  --grid: #e2e6ec;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: -apple-system, "Segoe UI", "Pretendard", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 48px;
+  padding: 0 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 16px;
+  margin-right: 8px;
+  color: var(--accent);
+}
+
+.tool-group {
+  display: flex;
+  gap: 6px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+}
+.tool-group:first-of-type { border-left: none; padding-left: 0; }
+
+button, .file-btn {
+  padding: 6px 10px;
+  font-size: 13px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text);
+}
+button:hover, .file-btn:hover { background: #f3f4f6; }
+button:disabled { opacity: 0.4; cursor: default; }
+
+.file-btn { position: relative; overflow: hidden; display: inline-block; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+#app {
+  display: flex;
+  height: calc(100% - 48px);
+}
+
+#palette {
+  width: 150px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.palette-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin: 10px 4px 4px;
+  letter-spacing: 0.04em;
+}
+
+.palette-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  cursor: grab;
+  border: 1px solid transparent;
+  font-size: 13px;
+}
+.palette-item:hover { background: #f3f4f6; border-color: var(--border); }
+.palette-item svg { flex-shrink: 0; }
+
+#canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#board {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: default;
+}
