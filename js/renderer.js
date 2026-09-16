@@ -1,4 +1,6 @@
 // 표준 IEEE/ANSI 논리 게이트 기호를 캔버스에 그린다.
+import { MIN_VARIADIC_INPUTS, MAX_VARIADIC_INPUTS } from "./gates.js";
+
 const GRID_SIZE = 20;
 const BUBBLE_R = 3.5;
 // 부정 버블과 출력 핀 점이 겹쳐 보이지 않도록 둘 사이에 확보하는 여백.
@@ -33,6 +35,9 @@ export class Renderer {
     if (wireDraft) this.drawWireDraft(wireDraft);
     for (const gate of circuit.gates.values()) {
       this.drawGate(gate, icRegistry, selection.has(gate.id));
+    }
+    for (const gate of circuit.gates.values()) {
+      if (selection.has(gate.id) && gate.canResize()) this.drawResizeControls(gate);
     }
     if (rubberBand) this.drawRubberBand(rubberBand);
   }
@@ -123,6 +128,26 @@ export class Renderer {
     ctx.lineWidth = 1;
     ctx.fillRect(x, y, w, h);
     ctx.strokeRect(x, y, w, h);
+  }
+
+  drawResizeControls(gate) {
+    const { minus, plus } = gate.resizeButtonRects();
+    this.drawResizeButton(minus, "−", gate.numInputs > MIN_VARIADIC_INPUTS);
+    this.drawResizeButton(plus, "+", gate.numInputs < MAX_VARIADIC_INPUTS);
+  }
+
+  drawResizeButton(rect, label, enabled) {
+    const ctx = this.ctx;
+    ctx.fillStyle = enabled ? "#ffffff" : "#f1f5f9";
+    ctx.strokeStyle = enabled ? "#2563eb" : "#cbd5e1";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.w, rect.h);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = enabled ? "#2563eb" : "#94a3b8";
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(label, rect.x + rect.w / 2, rect.y + rect.h / 2 + 0.5);
   }
 
   get shapeDrawers() {

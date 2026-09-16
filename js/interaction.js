@@ -35,6 +35,18 @@ export class Interaction {
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
 
+  findResizeButtonAt(pos) {
+    const { circuit, selection } = this.world;
+    for (const id of selection) {
+      const gate = circuit.gates.get(id);
+      if (!gate || !gate.canResize()) continue;
+      const { minus, plus } = gate.resizeButtonRects();
+      if (pointInRect(pos, minus)) return { gate, delta: -1 };
+      if (pointInRect(pos, plus)) return { gate, delta: 1 };
+    }
+    return null;
+  }
+
   findPinAt(pos) {
     const { circuit, icRegistry } = this.world;
     for (const gate of circuit.gates.values()) {
@@ -75,6 +87,13 @@ export class Interaction {
   onMouseDown(e) {
     const pos = this.localPos(e);
     const { selection } = this.world;
+
+    const resizeHit = this.findResizeButtonAt(pos);
+    if (resizeHit) {
+      this.history.begin();
+      if (resizeHit.gate.setNumInputs(resizeHit.gate.numInputs + resizeHit.delta)) this.history.end();
+      return;
+    }
 
     const pin = this.findPinAt(pos);
     if (pin && pin.kind === "out") {
@@ -216,6 +235,10 @@ export class Interaction {
     this.history.end();
     return true;
   }
+}
+
+function pointInRect(p, r) {
+  return p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
 }
 
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }

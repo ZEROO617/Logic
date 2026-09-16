@@ -123,6 +123,18 @@ export class Gate {
     return VARIADIC_TYPES.has(this.type);
   }
 
+  // 선택된 가변 입력 게이트 아래에 표시되는 입력 개수 +/- 버튼의 위치.
+  resizeButtonRects() {
+    const btnSize = 16, gap = 4;
+    const totalW = btnSize * 2 + gap;
+    const startX = this.x + this.width / 2 - totalW / 2;
+    const y = this.y + this.height + 4;
+    return {
+      minus: { x: startX, y, w: btnSize, h: btnSize },
+      plus: { x: startX + btnSize + gap, y, w: btnSize, h: btnSize },
+    };
+  }
+
   setNumInputs(n) {
     n = Math.max(MIN_VARIADIC_INPUTS, Math.min(MAX_VARIADIC_INPUTS, n));
     if (n === this.numInputs) return false;
