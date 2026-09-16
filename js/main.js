@@ -10,7 +10,7 @@ import { showPrompt } from "./modal.js";
 
 const icRegistry = new ICRegistry();
 const circuit = new Circuit(icRegistry);
-const world = { circuit, icRegistry, selection: new Set(), wireDraft: null, rubberBand: null };
+const world = { circuit, icRegistry, selection: new Set(), wireDraft: null, rubberBand: null, camera: { x: 0, y: 0 } };
 let clipboard = null; // { gates: json[], wires: json[] }
 
 const canvas = document.getElementById("board");
@@ -114,9 +114,9 @@ interaction.onDrop = function (e) {
   if (type === "IC") {
     e.preventDefault();
     const icDefId = Number(e.dataTransfer.getData("text/ic-def-id"));
-    const r = canvas.getBoundingClientRect();
+    const pos = interaction.localPos(e);
     history.begin();
-    const gate = new Gate("IC", e.clientX - r.left - 45, e.clientY - r.top - 25, { icDefId, ...icGateSize(icDefId) });
+    const gate = new Gate("IC", pos.x - 45, pos.y - 25, { icDefId, ...icGateSize(icDefId) });
     circuit.addGate(gate);
     world.selection.clear();
     world.selection.add(gate.id);

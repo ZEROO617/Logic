@@ -32,7 +32,8 @@ export class Interaction {
 
   localPos(e) {
     const r = this.canvas.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+    const { camera } = this.world;
+    return { x: e.clientX - r.left - camera.x, y: e.clientY - r.top - camera.y };
   }
 
   findResizeButtonAt(pos) {
@@ -85,6 +86,15 @@ export class Interaction {
   }
 
   onMouseDown(e) {
+    if (e.button === 2) {
+      e.preventDefault();
+      this.mode = "pan";
+      this.panStart = { x: e.clientX, y: e.clientY };
+      this.panOrigin = { ...this.world.camera };
+      this.canvas.style.cursor = "grabbing";
+      return;
+    }
+
     const pos = this.localPos(e);
     const { selection } = this.world;
 
@@ -148,6 +158,12 @@ export class Interaction {
   }
 
   onMouseMove(e) {
+    if (this.mode === "pan") {
+      const { camera } = this.world;
+      camera.x = this.panOrigin.x + (e.clientX - this.panStart.x);
+      camera.y = this.panOrigin.y + (e.clientY - this.panStart.y);
+      return;
+    }
     if (!this.mode) return;
     const pos = this.localPos(e);
 
@@ -169,6 +185,11 @@ export class Interaction {
   }
 
   onMouseUp(e) {
+    if (this.mode === "pan") {
+      this.mode = null;
+      this.canvas.style.cursor = "default";
+      return;
+    }
     if (this.mode === "draw-wire") {
       const pos = this.localPos(e);
       const pin = this.findPinAt(pos);

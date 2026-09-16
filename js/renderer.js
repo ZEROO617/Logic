@@ -27,10 +27,12 @@ export class Renderer {
     const { ctx, canvas } = this;
     const cssW = canvas.clientWidth, cssH = canvas.clientHeight;
     ctx.clearRect(0, 0, cssW, cssH);
-    this.drawGrid(cssW, cssH);
 
-    const { circuit, icRegistry, selection, wireDraft, rubberBand } = this.world;
+    const { circuit, icRegistry, selection, wireDraft, rubberBand, camera } = this.world;
+    this.drawGrid(cssW, cssH, camera);
 
+    ctx.save();
+    ctx.translate(camera.x, camera.y);
     for (const wire of circuit.wires.values()) this.drawWire(wire, circuit);
     if (wireDraft) this.drawWireDraft(wireDraft);
     for (const gate of circuit.gates.values()) {
@@ -40,16 +42,25 @@ export class Renderer {
       if (selection.has(gate.id) && gate.canResize()) this.drawResizeControls(gate);
     }
     if (rubberBand) this.drawRubberBand(rubberBand);
+    ctx.restore();
   }
 
-  drawGrid(w, h) {
+  // 카메라가 이동해도 화면 전체를 채우도록, 보이는 영역을 월드 좌표로
+  // 환산해 그 범위만큼 격자선을 그린다(격자 자체는 translate하지 않음).
+  drawGrid(w, h, camera) {
     const ctx = this.ctx;
+    const left = -camera.x, top = -camera.y;
+    const startX = Math.floor(left / GRID_SIZE) * GRID_SIZE;
+    const startY = Math.floor(top / GRID_SIZE) * GRID_SIZE;
     ctx.strokeStyle = "#e2e6ec";
     ctx.lineWidth = 1;
+    ctx.save();
+    ctx.translate(camera.x, camera.y);
     ctx.beginPath();
-    for (let x = 0; x < w; x += GRID_SIZE) { ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, h); }
-    for (let y = 0; y < h; y += GRID_SIZE) { ctx.moveTo(0, y + 0.5); ctx.lineTo(w, y + 0.5); }
+    for (let x = startX; x < left + w; x += GRID_SIZE) { ctx.moveTo(x + 0.5, top); ctx.lineTo(x + 0.5, top + h); }
+    for (let y = startY; y < top + h; y += GRID_SIZE) { ctx.moveTo(left, y + 0.5); ctx.lineTo(left + w, y + 0.5); }
     ctx.stroke();
+    ctx.restore();
   }
 
   drawWire(wire, circuit) {
