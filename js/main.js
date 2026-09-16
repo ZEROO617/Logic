@@ -6,6 +6,7 @@ import { Renderer, renderGateIcon } from "./renderer.js";
 import { Interaction } from "./interaction.js";
 import { History } from "./history.js";
 import { serializeProject, loadProject, autosave, loadAutosave, downloadProject, readFileAsText } from "./storage.js";
+import { showPrompt } from "./modal.js";
 
 const icRegistry = new ICRegistry();
 const circuit = new Circuit(icRegistry);
@@ -177,10 +178,10 @@ function updateToolbarState() {
   document.getElementById("btn-make-ic").disabled = world.selection.size === 0;
 }
 
-function makeIC() {
+async function makeIC() {
   const gates = [...world.selection].map(id => circuit.gates.get(id)).filter(Boolean);
   if (gates.length === 0) return;
-  const name = prompt("IC 이름을 입력하세요", "MyIC");
+  const name = await showPrompt({ title: "IC 이름을 입력하세요", placeholder: "예: HalfAdder", defaultValue: "MyIC" });
   if (!name) return;
 
   history.begin();
