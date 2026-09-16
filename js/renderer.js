@@ -1,5 +1,8 @@
 // 표준 IEEE/ANSI 논리 게이트 기호를 캔버스에 그린다.
 const GRID_SIZE = 20;
+const BUBBLE_R = 3.5;
+// 부정 버블과 출력 핀 점이 겹쳐 보이지 않도록 둘 사이에 확보하는 여백.
+const BUBBLE_GAP = 5;
 
 export class Renderer {
   constructor(canvas, world) {
@@ -135,26 +138,19 @@ export class Renderer {
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(gate.on ? "1" : "0", gate.width / 2, gate.height / 2);
       },
-      OUTPUT: function (gate) {
-        const ctx = this.ctx;
-        const cx = gate.width / 2, cy = gate.height / 2, r = gate.height / 2;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = gate.inputValues[0] ? "#fde68a" : "#ffffff";
-        ctx.fill(); ctx.stroke();
-      },
+      OUTPUT: function (gate) { this.drawBulb(gate); },
       NOT: function (gate) {
         const ctx = this.ctx;
         const { width: w, height: h } = gate;
-        const bubbleR = 4;
+        const bubbleCx = w - BUBBLE_GAP - BUBBLE_R;
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(w - bubbleR * 2, h / 2);
+        ctx.lineTo(bubbleCx - BUBBLE_R, h / 2);
         ctx.lineTo(0, h);
         ctx.closePath();
         ctx.fill(); ctx.stroke();
         ctx.beginPath();
-        ctx.arc(w - bubbleR, h / 2, bubbleR, 0, Math.PI * 2);
+        ctx.arc(bubbleCx, h / 2, BUBBLE_R, 0, Math.PI * 2);
         ctx.fill(); ctx.stroke();
       },
       AND: function (gate) { this.drawAndShape(gate, false); },
@@ -186,8 +182,8 @@ export class Renderer {
   drawAndShape(gate, bubble) {
     const ctx = this.ctx;
     const { width: w, height: h } = gate;
-    const bubbleR = 4;
-    const flatW = w * 0.5 - (bubble ? bubbleR : 0);
+    const bubbleShift = bubble ? BUBBLE_R * 2 + BUBBLE_GAP : 0;
+    const flatW = w * 0.5 - bubbleShift * 0.5;
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(flatW, 0);
@@ -195,19 +191,15 @@ export class Renderer {
     ctx.lineTo(0, h);
     ctx.closePath();
     ctx.fill(); ctx.stroke();
-    if (bubble) {
-      ctx.beginPath();
-      ctx.arc(w - bubbleR, h / 2, bubbleR, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
-    }
+    if (bubble) this.drawBubble(w - BUBBLE_GAP - BUBBLE_R, h / 2);
     this.labelGate(gate, bubble ? "NAND" : "AND");
   }
 
   drawOrShape(gate, bubble, xor) {
     const ctx = this.ctx;
     const { width: w, height: h } = gate;
-    const bubbleR = 4;
-    const tipX = w - (bubble ? bubbleR * 2 : 0);
+    const bubbleShift = bubble ? BUBBLE_R * 2 + BUBBLE_GAP : 0;
+    const tipX = w - bubbleShift;
     const backCurveX = xor ? 10 : 0;
 
     const drawBody = (offsetX) => {
@@ -226,21 +218,103 @@ export class Renderer {
     }
     drawBody(backCurveX);
     ctx.fill(); ctx.stroke();
-    if (bubble) {
-      ctx.beginPath();
-      ctx.arc(w - bubbleR, h / 2, bubbleR, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
-    }
+    if (bubble) this.drawBubble(w - BUBBLE_GAP - BUBBLE_R, h / 2);
     let label = "OR";
     if (bubble && xor) label = "XNOR"; else if (bubble) label = "NOR"; else if (xor) label = "XOR";
     this.labelGate(gate, label);
   }
 
+  drawBubble(cx, cy) {
+    const ctx = this.ctx;
+    ctx.beginPath();
+    ctx.arc(cx, cy, BUBBLE_R, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+  }
+
+  drawBulb(gate) {
+    const ctx = this.ctx;
+    const { width: w, height: h } = gate;
+    const r = h * 0.42;
+    const cx = r + 2, cy = h / 2;
+    const on = !!gate.inputValues[0];
+
+    if (on) { ctx.save(); ctx.shadowColor = "#f59e0b"; ctx.shadowBlur = 8; }
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = on ? "#fbbf24" : "#f8fafc";
+    ctx.fill();
+    ctx.strokeStyle = "#334155";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    if (on) ctx.restore();
+
+    ctx.strokeStyle = on ? "#b45309" : "#cbd5e1";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.35, cy + r * 0.3);
+    ctx.lineTo(cx - r * 0.1, cy - r * 0.3);
+    ctx.lineTo(cx + r * 0.15, cy + r * 0.1);
+    ctx.lineTo(cx + r * 0.35, cy - r * 0.3);
+    ctx.stroke();
+
+    const baseX = cx + r * 0.6;
+    const baseW = Math.max(4, w - baseX);
+    ctx.fillStyle = "#94a3b8";
+    ctx.strokeStyle = "#64748b";
+    ctx.lineWidth = 1;
+    ctx.fillRect(baseX, cy - r * 0.5, baseW, r);
+    ctx.strokeRect(baseX, cy - r * 0.5, baseW, r);
+    for (let i = 1; i < 3; i++) {
+      const lx = baseX + (baseW * i) / 3;
+      ctx.beginPath();
+      ctx.moveTo(lx, cy - r * 0.5);
+      ctx.lineTo(lx, cy + r * 0.5);
+      ctx.stroke();
+    }
+  }
+
   labelGate(gate, text) {
+    if (this.noLabel) return;
     const ctx = this.ctx;
     ctx.fillStyle = "#334155";
     ctx.font = "10px sans-serif";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(text, gate.width / 2 + 4, gate.height / 2);
   }
+}
+
+// 팔레트에 쓸 작은 게이트 아이콘을 오프스크린 캔버스에 그려 반환한다.
+export function renderGateIcon(type) {
+  const w = 30, h = 20;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const renderer = new Renderer(canvas, { icRegistry: null });
+  renderer.noLabel = true;
+  const ctx = renderer.ctx;
+
+  if (type === "IC") {
+    ctx.strokeStyle = "#334155";
+    ctx.fillStyle = "#ffffff";
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.rect(6, 3, w - 12, h - 6);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, h / 2); ctx.lineTo(6, h / 2);
+    ctx.moveTo(w - 6, h / 2); ctx.lineTo(w, h / 2);
+    ctx.stroke();
+    return canvas;
+  }
+
+  const fakeGate = { type, x: 0, y: 0, width: w - 6, height: h - 4, on: false, inputValues: [0], outputValues: [0] };
+  ctx.save();
+  ctx.translate(3, 2);
+  ctx.strokeStyle = "#334155";
+  ctx.fillStyle = "#ffffff";
+  ctx.lineWidth = 1.3;
+  const draw = renderer.shapeDrawers[type] || renderer.shapeDrawers.DEFAULT;
+  draw.call(renderer, fakeGate);
+  ctx.restore();
+  return canvas;
 }

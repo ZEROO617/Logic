@@ -100,12 +100,6 @@ export class Interaction {
 
     const gate = this.findGateAt(pos);
     if (gate) {
-      if (gate.type === "INPUT" && !e.shiftKey) {
-        this.history.begin();
-        gate.on = !gate.on;
-        this.history.end();
-        return;
-      }
       if (!selection.has(gate.id) && !e.shiftKey) selection.clear();
       selection.add(gate.id);
       this.mode = "drag-gates";
@@ -115,6 +109,8 @@ export class Interaction {
         return [id, { x: g.x, y: g.y }];
       }));
       this.moved = false;
+      this.mouseDownGate = gate;
+      this.mouseDownShift = e.shiftKey;
       this.history.begin();
       return;
     }
@@ -166,7 +162,12 @@ export class Interaction {
       this.pendingRedirect = false;
       this.world.wireDraft = null;
     } else if (this.mode === "drag-gates") {
-      if (this.moved) this.history.end();
+      if (this.moved) {
+        this.history.end();
+      } else if (this.mouseDownGate.type === "INPUT" && !this.mouseDownShift) {
+        this.mouseDownGate.on = !this.mouseDownGate.on;
+        this.history.end();
+      }
     } else if (this.mode === "rubber-band") {
       this.world.rubberBand = null;
     }

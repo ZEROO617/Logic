@@ -2,7 +2,7 @@ import { GATE_DEFS, Gate, resetGateIdCounter } from "./gates.js";
 import { Wire, resetWireIdCounter } from "./wire.js";
 import { Circuit } from "./circuit.js";
 import { ICRegistry, createICFromSelection } from "./ic.js";
-import { Renderer } from "./renderer.js";
+import { Renderer, renderGateIcon } from "./renderer.js";
 import { Interaction } from "./interaction.js";
 import { History } from "./history.js";
 import { serializeProject, loadProject, autosave, loadAutosave, downloadProject, readFileAsText } from "./storage.js";
@@ -54,15 +54,10 @@ function buildPalette() {
   palette.appendChild(title);
 
   for (const type of Object.keys(GATE_DEFS)) {
-    const item = document.createElement("div");
-    item.className = "palette-item";
-    item.draggable = true;
-    item.textContent = GATE_DEFS[type].label;
-    item.addEventListener("dragstart", (e) => {
+    palette.appendChild(makePaletteItem(GATE_DEFS[type].label, () => renderGateIcon(type), (e) => {
       e.dataTransfer.setData("text/gate-type", type);
       e.dataTransfer.effectAllowed = "copy";
-    });
-    palette.appendChild(item);
+    }));
   }
 
   const icTitle = document.createElement("div");
@@ -80,17 +75,34 @@ function refreshIcPalette() {
   const icList = document.getElementById("ic-list");
   icList.innerHTML = "";
   for (const def of icRegistry.values()) {
-    const item = document.createElement("div");
-    item.className = "palette-item";
-    item.draggable = true;
-    item.textContent = def.name;
-    item.addEventListener("dragstart", (e) => {
+    icList.appendChild(makePaletteItem(def.name, () => renderGateIcon("IC"), (e) => {
       e.dataTransfer.setData("text/gate-type", "IC");
       e.dataTransfer.setData("text/ic-def-id", String(def.id));
       e.dataTransfer.effectAllowed = "copy";
-    });
-    icList.appendChild(item);
+    }));
   }
+}
+
+// 팔레트 항목 하나(아이콘 + 이름)를 만들고, 드래그 시작 시 같은 아이콘을
+// 커서 밑에 붙는 드래그 이미지로도 사용한다.
+function makePaletteItem(label, makeIcon, onDragStart) {
+  const item = document.createElement("div");
+  item.className = "palette-item";
+  item.draggable = true;
+
+  const icon = makeIcon();
+  icon.className = "palette-icon";
+  item.appendChild(icon);
+
+  const text = document.createElement("span");
+  text.textContent = label;
+  item.appendChild(text);
+
+  item.addEventListener("dragstart", (e) => {
+    e.dataTransfer.setDragImage(makeIcon(), 15, 10);
+    onDragStart(e);
+  });
+  return item;
 }
 
 // IC 드롭 시 icDefId를 함께 넘겨야 하므로 Interaction의 onDrop을 감싼다.

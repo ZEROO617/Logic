@@ -94,8 +94,13 @@ button:disabled { opacity: 0.4; cursor: default; }
   border: 1px solid transparent;
   font-size: 13px;
 }
+
+.palette-icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 20px;
+}
 .palette-item:hover { background: #f3f4f6; border-color: var(--border); }
-.palette-item svg { flex-shrink: 0; }
 
 #canvas-wrap {
   flex: 1;
